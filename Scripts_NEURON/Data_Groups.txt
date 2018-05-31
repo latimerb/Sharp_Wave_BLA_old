@@ -1,0 +1,6 @@
+	0	Pyramidal	1707
+	1	PV Basket	170
+	2	Chandelier	21
+	3	Calretinin	128
+	4	CCK	54
+	5	Somatostatin	54

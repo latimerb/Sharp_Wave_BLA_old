@@ -1,0 +1,203 @@
+NCELL = 2134
+
+obfunc LoadMatrix() { local nrow,ncol localobj mat,datafile
+
+	nrow = $2
+
+	ncol = $3
+
+	datafile = new File()
+
+	datafile.ropen($s1)
+
+	mat = new Matrix()
+
+	mat.scanf(datafile,nrow,ncol)
+
+
+	datafile.close()
+
+	return mat
+
+}
+
+objref SynMatrix, WgtMatrix, ThrMatrix, DelMatrix
+
+SynMatrix = new Matrix()
+WgtMatrix = new Matrix()
+ThrMatrix = new Matrix()
+DelMatrix = new Matrix()
+
+SynMatrix = LoadMatrix(FileLocationStr_InternalSynConns, NCELL, NCELL)
+WgtMatrix = LoadMatrix(FileLocationStr_InternalWgtConns, NCELL, NCELL)
+ThrMatrix = LoadMatrix(FileLocationStr_InternalThrConns, NCELL, NCELL)
+DelMatrix = LoadMatrix(FileLocationStr_InternalDelConns, NCELL, NCELL)
+
+proc ConnectCells() { local i, j, cellgid, inputid, sourceid, targetid, synid localobj syn,cellid, nc, nclist, synlist
+
+	synlist = $o1
+	nclist = $o2
+	
+	{pc.barrier()}
+
+	for j = 0, NCELL-1 {
+
+		cellgid = j
+
+		if(!pc.gid_exists(cellgid)) { continue }
+
+		for i = 0, NCELL-1 {
+		
+			inputid = i
+			
+			synid = SynMatrix.x[inputid][cellgid]
+			
+			if (synid == 100) {
+			
+				sourceid = inputid
+
+				targetid = cellgid
+				
+				//printf("connecting cell %i to %i\n",sourceid,targetid)
+
+				cellid = pc.gid2cell(targetid)
+
+				cellid.soma syn = new Pyr_ITN(0.9)    
+
+				syn.pregid = sourceid
+
+				syn.postgid = targetid
+			
+				cellid.synlist.append(syn) 
+
+				syn.srcid= sourceid
+
+				syn.destid= targetid
+				
+				syn.initW = WgtMatrix.x[inputid][cellgid]
+			
+				nc = pc.gid_connect(sourceid,syn)
+
+				nc.weight = 1
+
+				nc.delay = DelMatrix.x[inputid][cellgid]
+
+				nc.threshold = ThrMatrix.x[inputid][cellgid]
+			
+				synlist.append(syn)
+
+				nclist.append(nc)
+			}else if (synid == 400 || synid == 500 || synid == 600) {
+				
+				sourceid = inputid
+
+				targetid = cellgid
+				
+				//printf("connecting cell %i to %i\n",sourceid,targetid)
+
+				cellid = pc.gid2cell(targetid)
+
+				cellid.axon syn = new ITN_Pyr(0.9)    
+
+				syn.pregid = sourceid
+
+				syn.postgid = targetid
+			
+				cellid.synlist.append(syn) 
+
+				syn.srcid= sourceid
+
+				syn.destid= targetid
+				
+				syn.initW = WgtMatrix.x[inputid][cellgid]
+			
+				nc = pc.gid_connect(sourceid,syn)
+
+				nc.weight = 1
+
+				nc.delay = DelMatrix.x[inputid][cellgid]
+
+				nc.threshold = ThrMatrix.x[inputid][cellgid]
+			
+				synlist.append(syn)
+
+				nclist.append(nc)
+				
+			}else if (synid == 200) {
+				
+				sourceid = inputid
+
+				targetid = cellgid
+				
+				//printf("connecting cell %i to %i\n",sourceid,targetid)
+
+				cellid = pc.gid2cell(targetid)
+
+				cellid.soma syn = new ITN_Pyr(0.9)    
+
+				syn.pregid = sourceid
+
+				syn.postgid = targetid
+			
+				cellid.synlist.append(syn) 
+
+				syn.srcid= sourceid
+
+				syn.destid= targetid
+				
+				syn.initW = WgtMatrix.x[inputid][cellgid]
+			
+				nc = pc.gid_connect(sourceid,syn)
+
+				nc.weight = 1
+
+				nc.delay = DelMatrix.x[inputid][cellgid]
+
+				nc.threshold = ThrMatrix.x[inputid][cellgid]
+			
+				synlist.append(syn)
+
+				nclist.append(nc)
+			}else  if (synid == 300){
+				
+				sourceid = inputid
+
+				targetid = cellgid
+				
+				//printf("connecting cell %i to %i\n",sourceid,targetid)
+
+				cellid = pc.gid2cell(targetid)
+
+				cellid.axon syn = new Chn_Pyr(0.5)    
+
+				syn.pregid = sourceid
+
+				syn.postgid = targetid
+			
+				cellid.synlist.append(syn) 
+
+				syn.srcid= sourceid
+
+				syn.destid= targetid
+				
+				syn.initW = WgtMatrix.x[inputid][cellgid]
+			
+				nc = pc.gid_connect(sourceid,syn)
+
+				nc.weight = 1
+
+				nc.delay = DelMatrix.x[inputid][cellgid]
+
+				nc.threshold = ThrMatrix.x[inputid][cellgid]
+			
+				synlist.append(syn)
+
+				nclist.append(nc)
+			}
+			
+			
+		}
+
+	}
+
+}

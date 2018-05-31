@@ -1,0 +1,33 @@
+close all;
+clear all;
+load voltage;
+
+Trace_1 = voltage(:,1);
+Trace_2 = voltage(:,2);
+Trace_3 = voltage(:,3);
+Trace_4 = voltage(:,4);
+Trace_5 = voltage(:,5);
+Trace_6 = voltage(:,6);
+Trace_7 = voltage(:,7);
+Trace_8 = voltage(:,8);
+Trace_9 = voltage(:,9);
+Trace_10 = voltage(:,10);
+Trace_11 = voltage(:,11);
+Trace_12 = voltage(:,12);
+
+hold all
+plot(Trace_1,'r');
+%plot(Trace_2,'r-');
+%plot(Trace_3,'r+');
+%plot(Trace_4,'r*');
+%plot(Trace_5,'b');
+%plot(Trace_6,'b-');
+%plot(Trace_7,'b+');
+%plot(Trace_8,'b*');
+%plot(Trace_9,'black');
+%plot(Trace_10,'black-');
+%plot(Trace_11,'black+');
+%plot(Trace_12,'black*');
+
+
+

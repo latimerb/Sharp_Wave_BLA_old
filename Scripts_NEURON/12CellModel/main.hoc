@@ -1,0 +1,278 @@
+{load_file("nrngui.hoc")}
+{load_file("LAcells_template.hoc")}
+{load_file("interneuron_template.hoc")}
+{load_file("class_axoaxoniccell.hoc")}
+{load_file("graphics_lib.hoc")}
+
+dt = 0.05
+steps_per_ms = 20
+v_init = -70
+
+tstop = 500
+
+objref pc, cellslist, cell[100], nil, nc, nc1
+pc = new ParallelContext()
+
+strdef FileLocationStr_InternalSynConns
+FileLocationStr_InternalSynConns = "Syn_Matrix.txt"
+
+objref Internalnclist, InternalSynList, CurrentRec
+Internalnclist = new List()
+InternalSynList = new List()
+CurrentRec = new Vector()
+
+NCELL = 12
+
+cellslist = new List()
+
+for (i = pc.id; i < NCELL; i+= pc.nhost){
+	if (i <= 7){
+		cell = new axoaxoniccell()	
+		printf("Cell %d is a CHN\n",i)
+	}else if (i > 7){
+		cell = new Cell_C()
+		printf("Cell %d is a Pyr\n",i)
+	}
+	cellslist.append(cell)
+	pc.set_gid2node(i, pc.id)
+	
+	
+	
+	nc = cell.connect2target(nil)   ///for gid_connect between gids
+	nc.delay = 0
+	nc.weight = 1
+	pc.cell(i, nc)
+}
+
+
+objref somaVclamp1
+access cellslist.object(0).soma 
+cellslist.object(0).soma somaVclamp1 = new SEClamp(0.5)
+somaVclamp1.rs = .1 // Mohm:series resistance should be much smaller than input resistance of the cell
+somaVclamp1.dur1 = 0
+somaVclamp1.amp1 = -70
+somaVclamp1.dur2 = tstop
+somaVclamp1.amp2 = -70
+somaVclamp1.dur3 = 0
+somaVclamp1.amp3 = -70
+
+
+/*
+objref somaVclamp2
+access cellslist.object(1).soma 
+somaVclamp2 = new VClamp(0.5)
+somaVclamp2.dur[0] = 1000
+somaVclamp2.amp[0] = -75
+
+objref somaVclamp3
+access cellslist.object(2).soma 
+somaVclamp3 = new VClamp(0.5)
+somaVclamp3.dur[0] = 1000
+somaVclamp3.amp[0] = -75
+
+objref somaVclamp4
+access cellslist.object(3).soma
+somaVclamp4 = new VClamp(0.5)
+somaVclamp4.dur[0] = 1000
+somaVclamp4.amp[0] = -75
+*/
+
+/*
+objref Current
+cellslist.object(8) Current = new IClamp(0.9)
+Current.dur = 22
+Current.del = 100
+Current.amp = .3
+*/
+
+objref axonCurrent, PyrCurrent, Pyrnc, PyrSyn
+access cellslist.object(8).axon
+axonCurrent=new IClamp(0.1)
+axonCurrent.dur = 5
+axonCurrent.del = 100
+axonCurrent.amp = .05
+
+/*
+PyrCurrent = new NetStim(0.5)
+PyrCurrent.number = 5
+PyrCurrent.start = 20
+PyrCurrent.interval = 20
+
+cellslist.object(2).soma PyrSyn = new Chn_Pyr(0.5)
+PyrSyn.initW = 50
+access cellslist.object(2).soma
+Pyrnc = new NetCon(PyrCurrent, PyrSyn)
+*/
+
+{load_file("ConnectToPyr.hoc")}
+{load_file("ConnectToITN.hoc")}
+{load_file("ConnectToCHN.hoc")}
+
+ChnToPyr(InternalSynList, Internalnclist, CurrentRec)
+//PyrToPyr(InternalSynList, Internalnclist)
+//ITNToPyr(InternalSynList, Internalnclist)
+//PyrToITN( InternalSynList, Internalnclist)
+//ITNToITN( InternalSynList, Internalnclist)
+PyrToCHN( InternalSynList, Internalnclist)
+//ITNtoCHN( InternalSynList, Internalnclist)
+	
+objref tvec, idvec 										// will be Vectors that record all spike times (tvec)
+														// and the corresponding id numbers of the cells that spiked (idvec)
+
+proc spikerecord() {local i localobj nc, nil
+
+	tvec = new Vector()
+	idvec = new Vector()
+	for i=0, cellslist.count-1 {
+	  nc = cellslist.object(i).connect2target(nil)
+	  nc.record(tvec, idvec, nc.srcgid)
+														// the Vector will continue to record spike times even after the NetCon has been destroyed
+	}
+}
+
+objref Volrec0, Volrec1, Volrec2, Volrec3, Volrec4, Volrec5, Volrec6, Volrec7, Volrec8, Volrec9, Volrec10,Volrec11
+objref Currec0
+
+Currec0 = new Vector()
+
+Volrec0 = new Vector()
+Volrec1 = new Vector()
+Volrec2 = new Vector()
+Volrec3 = new Vector()
+Volrec4 = new Vector()
+Volrec5 = new Vector()
+Volrec6 = new Vector()
+Volrec7 = new Vector()
+Volrec8 = new Vector()
+Volrec9 = new Vector()
+Volrec10 = new Vector()
+Volrec11 = new Vector()
+
+//Currec0.record(&somaVclamp1.i)
+
+Volrec0.record(&cellslist.object(0).soma.v(0.5))
+Volrec1.record(&cellslist.object(1).soma.v(0.5))
+Volrec2.record(&cellslist.object(2).soma.v(0.5))
+Volrec3.record(&cellslist.object(3).soma.v(0.5))
+Volrec4.record(&cellslist.object(4).soma.v(0.5))
+Volrec5.record(&cellslist.object(5).soma.v(0.5))
+Volrec6.record(&cellslist.object(6).soma.v(0.5))
+Volrec7.record(&cellslist.object(7).soma.v(0.5))
+Volrec8.record(&cellslist.object(8).axon.v(0.5))
+Volrec9.record(&cellslist.object(9).axon.v(0.5))
+Volrec10.record(&cellslist.object(10).axon.v(0.5))
+Volrec11.record(&cellslist.object(11).axon.v(0.5))
+
+
+objref tempmatrix
+tempmatrix = new Matrix()
+tempmatrix.resize(tstop/dt+1, 12)
+
+objref tempmatrix_current
+tempmatrix_current = new Matrix()
+tempmatrix_current.resize(tstop/dt+1,1)
+
+spikerecord()
+{pc.set_maxstep(10)}
+stdinit()
+{pc.psolve(tstop)}
+
+tempmatrix.setcol(0,Volrec0)
+tempmatrix.setcol(1,Volrec1)
+tempmatrix.setcol(2,Volrec2)
+tempmatrix.setcol(3,Volrec3)
+tempmatrix.setcol(4,Volrec4)
+tempmatrix.setcol(5,Volrec5)
+tempmatrix.setcol(6,Volrec6)
+tempmatrix.setcol(7,Volrec7)
+tempmatrix.setcol(8,Volrec8)
+tempmatrix.setcol(9,Volrec9)
+tempmatrix.setcol(10,Volrec10)
+tempmatrix.setcol(11,Volrec11)
+
+tempmatrix_current.setcol(0,CurrentRec)
+
+
+objref f_volt
+strdef voltage
+
+f_volt = new File()
+sprint(voltage,"voltage") 
+f_volt.wopen(voltage)
+tempmatrix.fprint(0,f_volt, " %g")
+f_volt.close()
+
+
+objref f_current
+strdef current
+
+f_current = new File()
+sprint(current,"current") 
+f_current.wopen(current)
+tempmatrix_current.fprint(0,f_current, " %g")
+f_current.close()
+
+
+////////////////////////////
+
+// Report simulation results
+// PROCEDURE TO SEND SPIKES TO A FILE "SPIKERASTER"---from PRC way-----------------------
+objref spikefile
+//sprint(fname,"%g/spikeraster",seed)
+spikefile = new File("data")
+
+if(pc.id==0){     //"wopen" once by node 0 to clear the contents of the file
+spikefile.wopen()
+spikefile.close()
+}
+
+
+proc spikefileout() { local i, rank
+pc.barrier() // wait for all hosts to get to this point
+
+for rank=0, pc.nhost-1 { // host 0 first, then 1, 2, etc.
+
+if (rank==pc.id) {
+for i=0, tvec.size-1 {
+spikefile.aopen()                               //"aopen" to append data
+spikefile.printf("%8.4f\t %d\n", tvec.x[i], idvec.x[i])
+spikefile.close()
+}
+}
+pc.barrier() // wait for all hosts to get to this point
+}
+}
+
+/*
+Plot1V("cellslist.object(1).soma","cellslist.object(1).soma")
+Plot1V("cellslist.object(3).soma","cellslist.object(3).soma")
+Plot1V("cellslist.object(5).soma","cellslist.object(5).soma")
+Plot1V("cellslist.object(7).soma","cellslist.object(7).soma")
+
+Plot1V("cellslist.object(8).axon","cellslist.object(8).axon")
+Plot1V("cellslist.object(9).axon","cellslist.object(9).axon")
+Plot1V("cellslist.object(10).axon","cellslist.object(10).axon")
+Plot1V("cellslist.object(11).axon","cellslist.object(11).axon")
+
+*/
+PlotWhatever("somaVclamp1.i",0,tstop,-20,0)
+spikefileout()
+
+objref f_current
+proc Save_Curr() { local z
+	if(pc.gid_exists(0)){
+		f_current = new File()
+		sprint(current,"./current") 
+		f_current.wopen(current)
+		Currec0.printf(f_current)
+		f_current.close()
+	}
+}
+
+Save_Curr()
+
+
+{pc.runworker()}
+
+{pc.done()}
+

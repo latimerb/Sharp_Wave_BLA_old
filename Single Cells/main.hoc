@@ -1,0 +1,122 @@
+{load_file("nrngui.hoc")}					//GUI library is loaded and neuron main menu toolbar appears
+//{load_file("interneuron_template.hoc")}		//loads file LAcells_template.hoc
+{load_file("LAcells_template.hoc")}
+{load_file("graphics_lib.hoc")}
+{load_file("class_axoaxoniccell.hoc")}
+
+////////////////---------------// PROCEDURES //------------------//////////////////
+
+//This procedure creates an FI curve (current injection vs. frequency)
+objref stim,nc,spvec,FIfile,Cell,Section		//define objects
+
+FIfile = new File("FIdata")
+FIfile.wopen() //Open and close to clear the contents
+FIfile.close()
+
+
+proc FIcurve(){local i localobj nil	
+	Cell = $o1
+	printf("Cell:",Cell)
+	Cell.AIS[6] stim = new IClamp(0.5)
+	Cell.AIS[6] nc = new NetCon(&v(0.5),nil)
+	stim.del = 100 // in ms						//delay of the stim 
+	stim.dur = 1000 // in ms						//duration of the stim
+	
+	for i=0,20{	
+		spvec = new Vector()
+		nc.record(spvec)
+		stim.amp = i/20 // in nA
+		init()
+		run()
+		//Save frequency and current in a file
+		//spvec.size
+		FIfile.aopen()                      //"aopen" to append data
+		FIfile.printf("%f\t %d\n", i/20, spvec.size())
+		FIfile.close()
+	}
+}
+
+////////////////////---------------// MAIN //------------------/////////////////////////
+
+v_init = -65								//initial value of voltage is set to -70mV
+tstop = 800
+
+objref Pyr,Chn								//declares that cell is a variable and will be used to refer Cell_B
+Pyr = new Cell_C()							//assigns Cell_C object class to Cell
+Chn = new axoaxoniccell()
+
+objref Chn2PyrSyn, Chn2PyrNC, Pyr2ChnSyn, Pyr2ChnNC
+
+
+//Connect cells to one another if so desired
+/*
+Pyr.axon Chn2PyrSyn = new Chn_Pyr(0.9)
+access Chn.soma
+Chn2PyrNC = new NetCon(&v(0.5), Chn2PyrSyn)
+Chn2PyrNC.weight = 1 //With MyExp2Sid, NC weight of 1 is a peak conductance of 1.
+Chn2PyrSyn.initW = 10
+*/
+/*
+Chn.soma Pyr2ChnSyn = new Pyr_ITN(0.5)
+access Pyr.axon
+Pyr2ChnNC = new NetCon(&v(0.5), Pyr2ChnSyn)
+Pyr2ChnNC.weight = 1
+Pyr2ChnNC.delay = 0
+Pyr2ChnNC.threshold = 0
+Pyr2ChnSyn.initW = 5
+*/
+
+///////////////////---------------// STIMULATION //------------------///////////////////////
+/*
+objref stim									//declares a variable stim
+Pyr.axon stim = new IClamp(0.5) 			//creates current clamp at the middle of the soma and assigns to stim
+stim.del = 100 // in ms						//delay of the stim 
+stim.dur = 100 // in ms						//duration of the stim
+stim.amp = 1 // in nA 				
+*/
+
+
+objref ChnIClamp, ChnVClamp
+access Chn.soma
+ChnIClamp = new IClamp(0.5)
+ChnIClamp.del = 100
+ChnIClamp.dur = 500 // in ms						//duration of the stim
+ChnIClamp.amp = -.06// in nA 		
+
+/*
+Chn.soma ChnVClamp = new SEClamp(0.5)
+ChnVClamp.rs = .1 // Mohm:series resistance should be much smaller than input resistance of the cell
+ChnVClamp.dur1 = 0
+ChnVClamp.amp1 = -70
+ChnVClamp.dur2 = tstop
+ChnVClamp.amp2 = -70
+ChnVClamp.dur3 = 0
+ChnVClamp.amp3 = -70	
+*/
+
+//Chn.soma stim2syn = new Pyr_ITN(0.5)
+//stim2syn.initW = 50
+
+//stim2nc = new NetCon(stim2, stim2syn)
+//stim2nc.weight = 1
+
+///// simulation control ////
+secondorder = 2								//currents are updated with a call to second_order_current
+steps_per_ms= 10							//no. of steps per ms
+
+run()
+
+///---------------// VISUALIZATION //------------------/////
+
+//Plot1V("Pyr.soma","Pyr.axon",50,tstop)
+Plot1V("Chn.soma", "Chn.soma",50,tstop)
+//PlotSynCurrent("stim2syn.igaba","stim2syn.igaba")
+//PlotSynCurrent("Pyr2ChnSyn.g_ampa","Pyr2ChnSyn.iampa")
+//PlotWhatever("","Pyr1.axon.h_na16",50,200,0,1)
+//PlotWhatever("ChnVClamp.i",0,tstop,-20,10)
+
+//printf("Generating FI Curve")
+//FIcurve(Pyr)
+
+
+run()

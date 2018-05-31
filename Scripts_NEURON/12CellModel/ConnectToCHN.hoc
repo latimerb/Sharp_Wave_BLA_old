@@ -1,0 +1,144 @@
+NCELL = 12
+
+obfunc LoadMatrix() { local nrow,ncol localobj mat,datafile
+
+	nrow = $2
+
+	ncol = $3
+
+	datafile = new File()
+
+	datafile.ropen($s1)
+
+	mat = new Matrix()
+
+	mat.scanf(datafile,nrow,ncol)
+
+
+	datafile.close()
+
+	return mat
+
+}
+
+objref SynMatrix
+
+SynMatrix = new Matrix()
+
+SynMatrix = LoadMatrix(FileLocationStr_InternalSynConns, NCELL, NCELL)
+
+proc PyrToCHN() { local i, j, cellgid, inputid, sourceid, targetid localobj syn,cellid, nc ,nclist, synlist
+	
+	synlist = $o1
+	nclist = $o2	
+	
+	{pc.barrier()}
+
+	for j = 0, 7 {
+
+		cellgid = j
+
+		if(!pc.gid_exists(cellgid)) { continue }
+
+		for i = 8, 11 {
+		
+			inputid = i
+			
+			synid = SynMatrix.x[inputid][cellgid]
+			
+			if (synid != 0) {
+			
+				sourceid = inputid
+
+				targetid = cellgid
+
+				cellid = pc.gid2cell(targetid)
+
+				cellid.soma syn = new Pyr_ITN(0.5)   
+
+				syn.initW = 75
+			
+				syn.pregid = sourceid
+
+				syn.postgid = targetid
+			
+				cellid.synlist.append(syn) 
+
+				syn.srcid= sourceid
+
+				syn.destid= targetid
+
+				nc = pc.gid_connect(sourceid,syn)
+
+				nc.weight = 1
+
+				nc.delay = 5
+
+				nc.threshold = 0
+				
+			    printf("Cell %d connected to %d\n",sourceid+1,targetid+1)
+				
+				synlist.append(syn)
+
+				nclist.append(nc)
+			}	
+		}
+	}
+}
+
+proc ITNtoCHN() { local i, j, cellgid, inputid, sourceid, targetid localobj syn,cellid, nc ,nclist, synlist
+	
+	synlist = $o1
+	nclist = $o2	
+	
+	{pc.barrier()}
+
+	for j = 8, 11 {
+
+		cellgid = j
+
+		if(!pc.gid_exists(cellgid)) { continue }
+
+		for i = 4, 7 {
+		
+			inputid = i
+			
+			synid = SynMatrix.x[inputid][cellgid]
+			
+			if (synid != 0) {
+			
+				sourceid = inputid
+
+				targetid = cellgid
+
+				cellid = pc.gid2cell(targetid)
+
+				cellid.soma syn = new ITN_Pyr(0.9)  
+
+				syn.initW = 2
+			
+				syn.pregid = sourceid
+
+				syn.postgid = targetid
+			
+				cellid.synlist.append(syn) 
+
+				syn.srcid= sourceid
+
+				syn.destid= targetid
+
+				nc = pc.gid_connect(sourceid,syn)
+
+				nc.weight = 2
+
+				nc.delay = 1
+
+				nc.threshold = 0
+			
+				synlist.append(syn)
+
+				nclist.append(nc)
+			}	
+		}
+	}
+}
